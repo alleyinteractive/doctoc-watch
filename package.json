@@ -4,7 +4,7 @@
   "description": "Doctoc Watcher written in node",
   "main": "index.js",
   "scripts": {
-    "test": "./doctoc-watch.js -t ./test/README.md -T '#Table of Contents' -l 'test/**/*.md' -L '##Random Other Title'"
+    "test": "./doctoc-watch.js -t ./test/README.md -T '#Table of Contents' -l '**/*.md','!**/node_modules/**/*.md' -L '##Random Other Title'"
   },
   "repository": {
     "type": "git",

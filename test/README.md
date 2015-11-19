@@ -7,16 +7,20 @@
 
 
 ##Random Other Title
-- [test](/test/)
-  - [README.md](/test/README.md)
-  - [nested](/test/nested/)
-    - [anotherTest.md](/test/nested/anotherTest.md)
-    - [test.md](/test/nested/test.md)
-    - [test2.md](/test/nested/test2.md)
-    - [nestedAgain](/test/nested/nestedAgain/)
-      - [nesting.md](/test/nested/nestedAgain/nesting.md)
-      - [testtest.md](/test/nested/nestedAgain/testtest.md)
-      - [test.md](/test/nested/nestedAgain/test.md)
+- [](/)
+  - [README.md](/README.md)
+  - [.git](/.git/)
+  - [node\_modules](/node_modules/)
+  - [test](/test/)
+    - [README.md](/test/README.md)
+    - [nested](/test/nested/)
+      - [anotherTest.md](/test/nested/anotherTest.md)
+      - [test.md](/test/nested/test.md)
+      - [test2.md](/test/nested/test2.md)
+      - [nestedAgain](/test/nested/nestedAgain/)
+        - [nesting.md](/test/nested/nestedAgain/nesting.md)
+        - [test.md](/test/nested/nestedAgain/test.md)
+        - [testtest.md](/test/nested/nestedAgain/testtest.md)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

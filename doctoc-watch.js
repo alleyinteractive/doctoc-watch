@@ -7,11 +7,15 @@ var Gaze = require('gaze').Gaze,
   program = require('commander'),
   cwd = process.cwd();
 
+function list(val) {
+  return val.split(',');
+}
+
 program
   .version('0.0.1')
   .option('-t, --target [target]', '[target] File')
   .option('-T, --targetHeader [targetHeader]', 'Markdown formatted [targetHeader]')
-  .option('-l, --listFiles [listFiles]', '[listFiles] to watch')
+  .option('-l, --listFiles [listFiles]', '[listFiles] to watch', list)
   .option('-L, --listFilesHeader [listFilesHeader]', 'Markdown formatted [listFilesHeader]')
   .parse(process.argv);
 
@@ -77,12 +81,16 @@ function docToc(files, callback) {
 }
 
 function mdTree(fileTree, cwd) {
+  console.log(fileTree);
   // markdonw list needs to start off w/ empty line;
   var line = ['', program.listFilesHeader];
 
   var keys = Object.keys(fileTree);
 
   keys.forEach(function(key) {
+    if(fileTree[key].length === 0) {
+      return;
+    }
     var tabs = keys.indexOf(key) + 1;
 
     line.push([
