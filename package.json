@@ -1,0 +1,30 @@
+{
+  "name": "doctoc-watch",
+  "version": "0.0.1",
+  "description": "Doctoc Watcher written in node",
+  "main": "index.js",
+  "scripts": {
+    "test": "./index.js -t ./test/README.md -T '#Table of Contents' -l 'test/**/*.md' -L '##Random Other Title'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alleyinteractive/doctoc-watch.git"
+  },
+  "keywords": [
+    "doctoc",
+    "doc",
+    "watcher",
+    "doctoc-watcher"
+  ],
+  "author": "Alley Interactive",
+  "license": "GPL v2",
+  "bugs": {
+    "url": "https://github.com/alleyinteractive/doctoc-watch/issues"
+  },
+  "homepage": "https://github.com/alleyinteractive/doctoc-watch#readme",
+  "dependencies": {
+    "commander": "^2.9.0",
+    "doctoc": "^0.15.0",
+    "gaze": "^0.5.2"
+  }
+}
