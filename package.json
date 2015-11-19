@@ -4,7 +4,7 @@
   "description": "Doctoc Watcher written in node",
   "main": "index.js",
   "scripts": {
-    "test": "./index.js -t ./test/README.md -T '#Table of Contents' -l 'test/**/*.md' -L '##Random Other Title'"
+    "test": "./doctoc-watch.js -t ./test/README.md -T '#Table of Contents' -l 'test/**/*.md' -L '##Random Other Title'"
   },
   "repository": {
     "type": "git",
@@ -16,6 +16,9 @@
     "watcher",
     "doctoc-watcher"
   ],
+  "bin": {
+    "doctoc-watch": "doctoc-watch.js"
+  },
   "author": "Alley Interactive",
   "license": "GPL v2",
   "bugs": {
