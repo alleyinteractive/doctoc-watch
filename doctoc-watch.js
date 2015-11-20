@@ -117,7 +117,7 @@ function generateMarkdown(file, cwd, nolink) {
     ].join('');
   } else {
     return [
-      '#',
+      '**',
       file
         .substring(cwd.length)
         .replace(mdEscape, '\\$1')
@@ -126,6 +126,7 @@ function generateMarkdown(file, cwd, nolink) {
           return x !== '';
         })
         .pop(),
+      '**',
     ].join('');
   }
 }
@@ -174,7 +175,6 @@ function mdTree(fileTree, cwd) {
   });
 
   line.push('');
-  console.log(line);
   return line;
 }
 
