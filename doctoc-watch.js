@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
-var Gaze = require('gaze').Gaze,
-  sys = require('sys'),
-  fs = require('fs'),
-  exec = require('child_process').exec,
-  program = require('commander'),
-  cwd = process.cwd();
+var Gaze = require('gaze').Gaze, // File watcher
+  fs = require('fs'), // File System tasks
+  exec = require('child_process').exec, // Enable execution of bash
+  program = require('commander'), // Easy program flags
+  cwd = process.cwd(); // Current Working Directory
 
+// Functions for commander "program" for easy options
+// Takes input and outputs an array
 function list(val) {
   return val.split(',');
 }
@@ -17,18 +18,22 @@ program
   .option('-T, --targetHeader [targetHeader]', 'Markdown formatted [targetHeader]')
   .option('-l, --listFiles [listFiles]', '[listFiles] to watch', list)
   .option('-L, --listFilesHeader [listFilesHeader]', 'Markdown formatted [listFilesHeader]')
+  .option('-o, --output', 'Verbose output of options')
   .parse(process.argv);
 
-console.log('Target: %j', program.target);
-console.log('Target Header: %j', program.targetHeader);
-console.log('Lists Files: %j', program.listFiles);
-console.log('List Files Header: %j', program.listFilesHeader);
-console.log('-------- Running --------');
+// Lets outpout all the options, if -v is set
+if (program.output) {
+  console.log('Target: %j', program.target);
+  console.log('Target Header: %j', program.targetHeader);
+  console.log('Lists Files: %j', program.listFiles);
+  console.log('List Files Header: %j', program.listFilesHeader);
+  console.log('-------- Running --------');
+}
 
 init();
 
+// This function sets up all the file watcher
 function init() {
-
   var gaze = new Gaze(program.listFiles);
 
   gaze.on('error', function(error) {
@@ -42,7 +47,9 @@ function init() {
   gaze.on('all', function(event, filepath) {
     // Adding/Deleting files
     if (event === 'deleted' || event === 'added') {
-      console.log(filepath.substring(cwd.length) + ' ' + event);
+      if (program.output) {
+        console.log(filepath.substring(cwd.length) + ' ' + event);
+      }
       // Remove the target file (since race conditions are dumb)
       gaze.remove(cwd + program.target.substring(1));
       docToc(gaze.watched(), function() {
@@ -53,23 +60,28 @@ function init() {
     // Changed on target file
     if (event === 'changed' &&
       (filepath.substring(cwd.length) === program.target.substring(1))) {
-      console.log('Running doctoc on ' + program.target);
+      if (program.output) {
+        console.log('Running doctoc on ' + program.target);
+      }
       docToc(gaze.watched());
     }
   });
 }
 
+/**
+ * Runs the doctoc via exec on the program target
+ * @param  {array}   files      array of all files wated
+ * @param  {Function} callback  callback to execute once exec is finished
+ * @return {null}               no return
+ */
 function docToc(files, callback) {
   var execString = 'doctoc ' + program.target + ' --github';
   exec(execString, function(err, stdout, stderr) {
-    // Don't show normal output as it doesn't matter, just show errors
-    // console.log(stdout);
     if(stderr) {
-      console.log('------ stderr ------');
       console.log(stderr);
     }
     if(err !== null) {
-      console.log('exec error: ' + error);
+      throw error;
     }
 
     updateReadme(mdTree(files, cwd));
@@ -80,31 +92,77 @@ function docToc(files, callback) {
   });
 }
 
+/**
+ * Convert the filename to a link
+ * @param  {string} file  filename to convert to link
+ * @param  {string} cwd   current working directory
+ * @return {string}       markdown string
+ */
+function generateMarkdown(file, cwd, nolink) {
+  var mdEscape = /([_*])/g;
+  if(!nolink) {
+    return [
+      '[',
+      file
+        .substring(cwd.length)
+        .replace(mdEscape, '\\$1')
+        .split('/')
+        .filter(function(x) {
+          return x !== '';
+        })
+        .pop(),
+      '](',
+      file.substring(cwd.length),
+      ')',
+    ].join('');
+  } else {
+    return [
+      '#',
+      file
+        .substring(cwd.length)
+        .replace(mdEscape, '\\$1')
+        .split('/')
+        .filter(function(x) {
+          return x !== '';
+        })
+        .pop(),
+    ].join('');
+  }
+}
+
+/**
+ * Build the filetree to append to the doctoc output
+ * @param  {array} fileTree   array of watched files
+ * @param  {string} cwd       current working directory
+ * @return {array}            filetree to append to doctoc output
+ */
 function mdTree(fileTree, cwd) {
-  console.log(fileTree);
   // markdonw list needs to start off w/ empty line;
   var line = ['', program.listFilesHeader];
 
   var keys = Object.keys(fileTree);
 
   keys.forEach(function(key) {
-    if(fileTree[key].length === 0) {
+    if (fileTree[key].length === 0) {
       return;
     }
-    var tabs = keys.indexOf(key) + 1;
-
-    line.push([
-      Array(tabs).join('  '),
-      '- ',
-      generateMdLink(key, cwd),
-    ].join(''));
+    if (keys.indexOf(key) !== 0) {
+      line.push([,
+        '- ',
+        generateMarkdown(key, cwd, true),
+      ].join(''));
+    }
 
     fileTree[key].forEach(function(file) {
+      // Skip if directory and not in root
+      if (file[file.length - 1] === '/'
+        && keys.indexOf(file) < 0) {
+        return;
+      }
       if (keys.indexOf(file) < 0) {
         line.push([
-          Array(tabs + 1).join('  '),
-          '- ',
-          generateMdLink(file, cwd),
+          (keys.indexOf(key) !== 0) ? '  - ': '',
+          generateMarkdown(file, cwd),
         ].join(''));
       }
     });
@@ -116,33 +174,20 @@ function mdTree(fileTree, cwd) {
   });
 
   line.push('');
-
+  console.log(line);
   return line;
 }
 
-function generateMdLink(link, cwd) {
-  var mdEscape = /([_*])/g;
-  return [
-    '[',
-    link
-      .substring(cwd.length)
-      .replace(mdEscape, '\\$1')
-      .split('/')
-      .filter(function(x) {
-        return x !== '';
-      })
-      .pop(),
-    '](',
-    link.substring(cwd.length),
-    ')',
-  ].join('');
-}
-
-function updateReadme(fileList) {
-  if (fileList.length) {
+/**
+ * Write the markdown tree to the end of doctoc output
+ * @param  {array} mdTree   array of lines to append to doctoc output
+ * @return {null}           no return
+ */
+function updateReadme(mdTree) {
+  if (mdTree.length) {
     var file = fs.readFileSync(program.target, 'utf8');
 
-    fileList
+    mdTree
       .push('<!-- END doctoc generated TOC please keep comment here to allow auto update -->')
 
     var dirtyFile = file
@@ -152,7 +197,7 @@ function updateReadme(fileList) {
       )
       .replace(
         '<!-- END doctoc generated TOC please keep comment here to allow auto update -->',
-        fileList.join('\n')
+        mdTree.join('\n')
       );
 
     fs.writeFileSync(program.target, dirtyFile, 'utf8');
