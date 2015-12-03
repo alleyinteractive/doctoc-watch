@@ -187,7 +187,7 @@ function recursiveBuildTree(fileTree, currKey, cwd, depth) {
     // Skip the root level
     if(depth !== 1) {
       line.push([
-        Array(depth).join('\s\s'),
+        Array(depth).join('  '),
         '- ',
         generateMarkdown(currKey, cwd, true),
       ].join(''));
@@ -220,7 +220,7 @@ function recursiveBuildTree(fileTree, currKey, cwd, depth) {
   // Else treat as a filename
   } else {
     line.push([
-      Array(depth).join('\s\s'),
+      Array(depth).join('  '),
       '- ',
       generateMarkdown(currKey, cwd),
     ].join(''));
