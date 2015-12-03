@@ -142,50 +142,89 @@ function generateMarkdown(file, cwd, nolink) {
   }
 }
 
+function isDir(testStr) {
+  return testStr[testStr.length - 1] === '/';
+}
+
 /**
  * Build the filetree to append to the doctoc output
- * @param  {array} fileTree   array of watched files
+ * @param  {object} fileTree   object of watched files
  * @param  {string} cwd       current working directory
  * @return {array}            filetree to append to doctoc output
  */
 function mdTree(fileTree, cwd) {
-  // markdonw list needs to start off w/ empty line;
+  // markdown list needs to start off w/ empty line;
   var line = ['', program.listFilesHeader];
 
-  var keys = Object.keys(fileTree);
+  // First is root filetree, so only use first key
+  line = line.concat(
+    recursiveBuildTree(fileTree, Object.keys(fileTree)[0], cwd, 1)
+  );
 
-  keys.forEach(function(key) {
-    if (fileTree[key].length === 0) {
-      return;
-    }
-    if (keys.indexOf(key) !== 0) {
-      line.push([,
+  // Dedupe
+  return line.filter(function(x, idx) {
+    return line.indexOf(x) === idx && x !== 'undefined';
+  });
+
+  // markdown list needs to end w/ empty line;
+  line.push('');
+  return line;
+}
+
+/**
+ * Recursively dig and build nesting for the mdTree
+ * @param  {object} fileTree  object of watched files
+ * @param  {string} currKey   current key of the filetree
+ * @param  {string} cwd       current working directory
+ * @param  {int}    depth     depth of the recursion
+ * @return {arry}             array of lines for the mdTree
+ */
+function recursiveBuildTree(fileTree, currKey, cwd, depth) {
+  var line = [];
+
+  // If directory, recursive dig!!
+  if (isDir(currKey) && fileTree[currKey]) {
+    // Skip the root level
+    if(depth !== 1) {
+      line.push([
+        Array(depth).join('\t'),
         '- ',
-        generateMarkdown(key, cwd, true),
+        generateMarkdown(currKey, cwd, true),
       ].join(''));
     }
 
-    fileTree[key].forEach(function(file) {
-      // Skip if directory and not in root
-      if (file[file.length - 1] === '/'
-        && keys.indexOf(file) < 0) {
-        return;
-      }
-      if (keys.indexOf(file) < 0) {
-        line.push([
-          (keys.indexOf(key) !== 0) ? '  - ': '',
-          generateMarkdown(file, cwd),
-        ].join(''));
-      }
-    });
-  });
-
-  // Dedupe
-  line.filter(function(x, idx) {
-    return line.indexOf(x) === idx;
-  });
-
-  line.push('');
+    var nested = fileTree[currKey];
+    nested
+      .sort(function(a, b) {
+        // Push directories below files
+        if(isDir(a) && !isDir(b)) {
+          return 1;
+        } else if (!isDir(a) && isDir(b)) {
+          return -1;
+        }
+        return 0;
+      })
+      .forEach(function(file) {
+        if(isDir(file) && fileTree[file] === undefined) {
+          return;
+        } else {
+          line = line.concat(
+            recursiveBuildTree(fileTree, file, cwd, depth + 1)
+          );
+        }
+      });
+  // If directory and not in filetree,
+  // which means it's childfree
+  } else if (isDir(currKey) && !fileTree[currKey]) {
+    return;
+  // Else treat as a filename
+  } else {
+    line.push([
+      Array(depth).join('\t'),
+      '- ',
+      generateMarkdown(currKey, cwd),
+    ].join(''));
+  }
   return line;
 }
 
