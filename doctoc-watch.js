@@ -154,7 +154,7 @@ function isDir(testStr) {
  */
 function mdTree(fileTree, cwd) {
   // markdown list needs to start off w/ empty line;
-  var line = ['', program.listFilesHeader];
+  var line = ['', program.listFilesHeader, ''];
 
   // First is root filetree, so only use first key
   line = line.concat(
@@ -187,7 +187,7 @@ function recursiveBuildTree(fileTree, currKey, cwd, depth) {
     // Skip the root level
     if(depth !== 1) {
       line.push([
-        Array(depth).join('\t'),
+        Array(depth).join('\s\s'),
         '- ',
         generateMarkdown(currKey, cwd, true),
       ].join(''));
@@ -220,7 +220,7 @@ function recursiveBuildTree(fileTree, currKey, cwd, depth) {
   // Else treat as a filename
   } else {
     line.push([
-      Array(depth).join('\t'),
+      Array(depth).join('\s\s'),
       '- ',
       generateMarkdown(currKey, cwd),
     ].join(''));
