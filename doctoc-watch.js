@@ -19,6 +19,8 @@ program
   .option('-l, --listFiles [listFiles]', '[listFiles] to watch', list)
   .option('-L, --listFilesHeader [listFilesHeader]', 'Markdown formatted [listFilesHeader]')
   .option('-o, --output', 'Verbose output of options')
+  .option('-r, --runOnce', 'Run only once, without watching')
+
   .parse(process.argv);
 
 // Lets outpout all the options, if -v is set
@@ -27,6 +29,9 @@ if (program.output) {
   console.log('Target Header: %j', program.targetHeader);
   console.log('Lists Files: %j', program.listFiles);
   console.log('List Files Header: %j', program.listFilesHeader);
+  if(program.runOnce) {
+    console.log('Running once without watch');
+  }
   console.log('-------- Running --------');
 }
 
@@ -35,6 +40,12 @@ init();
 // This function sets up all the file watcher
 function init() {
   var gaze = new Gaze(program.listFiles);
+
+  if(program.runOnce) {
+    docToc(gaze.watched());
+    gaze.close();
+    return;
+  }
 
   gaze.on('error', function(error) {
     console.log('An error has occured: ' + error);
