@@ -154,21 +154,21 @@ function isDir(testStr) {
  */
 function mdTree(fileTree, cwd) {
   // markdown list needs to start off w/ empty line;
-  var line = ['', program.listFilesHeader, ''];
+  var tree = ['', program.listFilesHeader, ''];
 
   // First is root filetree, so only use first key
-  line = line.concat(
+  tree = tree.concat(
     recursiveBuildTree(fileTree, Object.keys(fileTree)[0], cwd, 1)
   );
 
-  // Dedupe
-  return line.filter(function(x, idx) {
-    return line.indexOf(x) === idx && x !== 'undefined';
+  // Dedupe, ignoring ''
+  tree.filter(function(x, idx) {
+    return (tree.indexOf(x) === idx || x === '') && x !== 'undefined';
   });
 
   // markdown list needs to end w/ empty line;
-  line.push('');
-  return line;
+  tree.push('');
+  return tree;
 }
 
 /**
