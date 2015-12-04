@@ -9,18 +9,18 @@
 ##Random Other Title
 
   - [README.md](/README.md)
-  - **test**
-    - [README.md](/test/README.md)
+  - [test](/test/)
     - [rootlevel.md](/test/rootlevel.md)
     - [test.md](/test/test.md)
-    - **nested**
+    - [test2.md](/test/test2.md)
+    - [nested](/test/nested/)
       - [anotherTest.md](/test/nested/anotherTest.md)
       - [test.md](/test/nested/test.md)
-      - **nestedAgain**
+      - [nestedAgain](/test/nested/nestedAgain/)
         - [nesting.md](/test/nested/nestedAgain/nesting.md)
         - [test.md](/test/nested/nestedAgain/test.md)
         - [testtest.md](/test/nested/nestedAgain/testtest.md)
-    - **sibling**
+    - [sibling](/test/sibling/)
       - [siblingtest.md](/test/sibling/siblingtest.md)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->

@@ -1,26 +1,28 @@
 #!/usr/bin/env node
 
-var Gaze = require('gaze').Gaze, // File watcher
-  fs = require('fs'), // File System tasks
-  exec = require('child_process').exec, // Enable execution of bash
-  program = require('commander'), // Easy program flags
-  cwd = process.cwd(); // Current Working Directory
-
-// Functions for commander "program" for easy options
-// Takes input and outputs an array
-function list(val) {
-  return val.split(',');
-}
+const Gaze = require('gaze').Gaze; // File watcher
+const fs = require('fs'); // File System tasks
+const exec = require('child_process').exec; // Enable execution of bash
+const program = require('commander'); // Easy program flags
+const cwd = process.cwd(); // Current Working Directory
 
 program
   .version('0.0.1')
   .option('-t, --target [target]', '[target] File')
-  .option('-T, --targetHeader [targetHeader]', 'Markdown formatted [targetHeader]')
-  .option('-l, --listFiles [listFiles]', '[listFiles] to watch', list)
-  .option('-L, --listFilesHeader [listFilesHeader]', 'Markdown formatted [listFilesHeader]')
+  .option(
+    '-T, --targetHeader [targetHeader]',
+    'Markdown formatted [targetHeader]'
+  )
+  .option(
+    '-l, --listFiles [listFiles]',
+    '[listFiles] to watch', (val) => val.split(',')
+  )
+  .option(
+    '-L, --listFilesHeader [listFilesHeader]',
+    'Markdown formatted [listFilesHeader]'
+  )
   .option('-o, --output', 'Verbose output of options')
   .option('-r, --runOnce', 'Run only once, without watching')
-
   .parse(process.argv);
 
 // Lets outpout all the options, if -v is set
@@ -39,7 +41,7 @@ init();
 
 // This function sets up all the file watcher
 function init() {
-  var gaze = new Gaze(program.listFiles);
+  const gaze = new Gaze(program.listFiles);
 
   if(program.runOnce) {
     docToc(gaze.watched());
@@ -47,23 +49,23 @@ function init() {
     return;
   }
 
-  gaze.on('error', function(error) {
-    console.log('An error has occured: ' + error);
+  gaze.on('error', (error) => {
+    console.log(`An error has occured: ${error}`);
   });
 
-  gaze.on('nomatch', function() {
+  gaze.on('nomatch', () => {
     console.log('No matches found');
   });
 
-  gaze.on('all', function(event, filepath) {
+  gaze.on('all', (event, filepath) => {
     // Adding/Deleting files
     if (event === 'deleted' || event === 'added') {
       if (program.output) {
-        console.log(filepath.substring(cwd.length) + ' ' + event);
+        console.log(`${filepath.substring(cwd.length)} ${event}`);
       }
       // Remove the target file (since race conditions are dumb)
       gaze.remove(cwd + program.target.substring(1));
-      docToc(gaze.watched(), function() {
+      docToc(gaze.watched(), () => {
         gaze.add(cwd + program.target.substring(1));
       });
     }
@@ -72,7 +74,7 @@ function init() {
     if (event === 'changed' &&
       (filepath.substring(cwd.length) === program.target.substring(1))) {
       if (program.output) {
-        console.log('Running doctoc on ' + program.target);
+        console.log(`Running doctoc on ${program.target}`);
       }
       docToc(gaze.watched());
     }
@@ -86,8 +88,8 @@ function init() {
  * @return {null}               no return
  */
 function docToc(files, callback) {
-  var execString = 'doctoc ' + program.target + ' --github';
-  exec(execString, function(err, stdout, stderr) {
+  const execString = `doctoc ${program.target} --github`;
+  exec(execString, (err, stdout, stderr) => {
     if(stderr) {
       console.log(stderr);
     }
@@ -105,41 +107,22 @@ function docToc(files, callback) {
 
 /**
  * Convert the filename to a link
- * @param  {string} file  filename to convert to link
- * @param  {string} cwd   current working directory
- * @return {string}       markdown string
+ * @param  {string} file    filename to convert to link
+ * @param  {string} cwd     current working directory
+ * @param  {bool}   nolink  should it generate a link?
+ * @return {string}         markdown string
  */
 function generateMarkdown(file, cwd, nolink) {
-  var mdEscape = /([_*])/g;
-  if(!nolink) {
-    return [
-      '[',
-      file
-        .substring(cwd.length)
-        .replace(mdEscape, '\\$1')
-        .split('/')
-        .filter(function(x) {
-          return x !== '';
-        })
-        .pop(),
-      '](',
-      file.substring(cwd.length),
-      ')',
-    ].join('');
-  } else {
-    return [
-      '**',
-      file
-        .substring(cwd.length)
-        .replace(mdEscape, '\\$1')
-        .split('/')
-        .filter(function(x) {
-          return x !== '';
-        })
-        .pop(),
-      '**',
-    ].join('');
-  }
+  const noLink = noLink || false;
+  const mdEscape = /([_*])/g;
+  const text = file
+              .substring(cwd.length)
+              .replace(mdEscape, '\\$1')
+              .split('/')
+              .filter((x) => x !== '')
+              .pop();
+
+  return (noLink) ? `**${text}**` : `[${text}](${file.substring(cwd.length)})`;
 }
 
 function isDir(testStr) {
@@ -154,7 +137,7 @@ function isDir(testStr) {
  */
 function mdTree(fileTree, cwd) {
   // markdown list needs to start off w/ empty line;
-  var tree = ['', program.listFilesHeader, ''];
+  let tree = ['', program.listFilesHeader, ''];
 
   // First is root filetree, so only use first key
   tree = tree.concat(
@@ -180,20 +163,17 @@ function mdTree(fileTree, cwd) {
  * @return {arry}             array of lines for the mdTree
  */
 function recursiveBuildTree(fileTree, currKey, cwd, depth) {
-  var line = [];
+  let line = [];
 
   // If directory, recursive dig!!
   if (isDir(currKey) && fileTree[currKey]) {
     // Skip the root level
     if(depth !== 1) {
-      line.push([
-        Array(depth).join('  '),
-        '- ',
-        generateMarkdown(currKey, cwd, true),
-      ].join(''));
+      const markdown = generateMarkdown(currKey, cwd, true);
+      line.push(`${Array(depth).join('  ')}- ${markdown}`)
     }
 
-    var nested = fileTree[currKey];
+    const nested = fileTree[currKey];
     nested
       .sort(function(a, b) {
         // Push directories below files
@@ -219,11 +199,8 @@ function recursiveBuildTree(fileTree, currKey, cwd, depth) {
     return;
   // Else treat as a filename
   } else {
-    line.push([
-      Array(depth).join('  '),
-      '- ',
-      generateMarkdown(currKey, cwd),
-    ].join(''));
+    const markdown = generateMarkdown(currKey, cwd);
+    line.push(`${Array(depth).join('  ')}- ${markdown}`);
   }
   return line;
 }
@@ -234,24 +211,26 @@ function recursiveBuildTree(fileTree, currKey, cwd, depth) {
  * @return {null}           no return
  */
 function updateReadme(mdTree) {
-  if (mdTree.length) {
-    var file = fs.readFileSync(program.target, 'utf8');
-
-    mdTree
-      .push('<!-- END doctoc generated TOC please keep comment here to allow auto update -->')
-
-    var dirtyFile = file
-      .replace(
-        '**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*',
-        program.targetHeader
-      )
-      .replace(
-        '<!-- END doctoc generated TOC please keep comment here to allow auto update -->',
-        mdTree.join('\n')
-      );
-
-    fs.writeFileSync(program.target, dirtyFile, 'utf8');
-
-    console.log('Readme Updated');
+  if (mdTree.length <= 0) {
+    return;
   }
+
+  const file = fs.readFileSync(program.target, 'utf8');
+
+  mdTree
+    .push('<!-- END doctoc generated TOC please keep comment here to allow auto update -->')
+
+  const dirtyFile = file
+    .replace(
+      '**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*',
+      program.targetHeader
+    )
+    .replace(
+      '<!-- END doctoc generated TOC please keep comment here to allow auto update -->',
+      mdTree.join('\n')
+    );
+
+  fs.writeFileSync(program.target, dirtyFile, 'utf8');
+
+  console.log('Readme Updated');
 }
