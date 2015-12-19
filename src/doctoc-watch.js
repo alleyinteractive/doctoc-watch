@@ -15,7 +15,8 @@ program
   )
   .option(
     '-l, --listFiles [listFiles]',
-    '[listFiles] to watch', (val) => val.split(',')
+    '[listFiles] to watch',
+    (val) => val.split(',')
   )
   .option(
     '-L, --listFilesHeader [listFilesHeader]',
