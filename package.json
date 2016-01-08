@@ -4,8 +4,9 @@
   "description": "Doctoc Watcher written in node",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/babel-node ./src/doctoc-watch.js -t ./test/README.md -T '#Table of Contents' -l '**/*.md','!**/node_modules/**/*.md' -L '##Random Other Title'",
-    "test-once": "./node_modules/.bin/babel-node ./src/doctoc-watch.js -t ./test/README.md -T '#Table of Contents' -l '**/*.md','!**/node_modules/**/*.md' -L '##Random Other Title' -r",
+    "test": "./node_modules/.bin/babel-node ./src/doctoc-watch.js -t ./test/README.md -T '#Table of Contents' -l '**/*.md','!**/node_modules/**/*.md' -L '##Random Other Title' -v",
+    "test-once": "./node_modules/.bin/babel-node ./src/doctoc-watch.js -t ./test/README.md -T '#Table of Contents' -l '**/*.md','!**/node_modules/**/*.md' -L '##Random Other Title' -r -v",
+    "lint": "./node_modules/.bin/eslint src/**",
     "prepublish": "./node_modules/.bin/babel -d lib src/"
   },
   "repository": {
@@ -22,7 +23,7 @@
     "doctoc-watch": "src/doctoc-watch.js"
   },
   "author": "Alley Interactive",
-  "license": "GPL v2",
+  "license": "GPL-2.0",
   "bugs": {
     "url": "https://github.com/alleyinteractive/doctoc-watch/issues"
   },
@@ -34,7 +35,11 @@
   },
   "devDependencies": {
     "babel-cli": "^6.3.13",
+    "babel-eslint": "^4.1.6",
+    "babel-plugin-uglify": "^1.0.2",
     "babel-preset-es2015": "^6.3.13",
+    "eslint": "^1.10.3",
+    "eslint-config-airbnb": "^2.1.1",
     "jasmine-node": "^1.14.5",
     "rewire": "^2.5.1"
   }

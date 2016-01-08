@@ -4,7 +4,7 @@ const Gaze = require('gaze').Gaze; // File watcher
 const fs = require('fs'); // File System tasks
 const exec = require('child_process').exec; // Enable execution of bash
 const program = require('commander'); // Easy program flags
-const cwd = process.cwd(); // Current Working Directory
+const rootCwd = process.cwd(); // Current Working Directory
 
 program
   .version('0.0.1')
@@ -21,7 +21,7 @@ program
     '-L, --listFilesHeader [listFilesHeader]',
     'Markdown formatted [listFilesHeader]'
   )
-  .option('-o, --output', 'Verbose output of options')
+  .option('-v, --output', 'Verbose output of options')
   .option('-r, --runOnce', 'Run only once, without watching')
   .parse(process.argv);
 
@@ -31,7 +31,7 @@ if (program.output) {
   console.log('Target Header: %j', program.targetHeader);
   console.log('Lists Files: %j', program.listFiles);
   console.log('List Files Header: %j', program.listFilesHeader);
-  if(program.runOnce) {
+  if (program.runOnce) {
     console.log('Running once without watch');
   }
   console.log('-------- Running --------');
@@ -43,7 +43,7 @@ init();
 function init() {
   const gaze = new Gaze(program.listFiles);
 
-  if(program.runOnce) {
+  if (program.runOnce) {
     docToc(gaze.watched());
     gaze.close();
     return;
@@ -61,18 +61,18 @@ function init() {
     // Adding/Deleting files
     if (event === 'deleted' || event === 'added') {
       if (program.output) {
-        console.log(`${filepath.substring(cwd.length)} ${event}`);
+        console.log(`${filepath.substring(rootCwd.length)} ${event}`);
       }
       // Remove the target file (since race conditions are dumb)
-      gaze.remove(cwd + program.target.substring(1));
+      gaze.remove(rootCwd + program.target.substring(1));
       docToc(gaze.watched(), () => {
-        gaze.add(cwd + program.target.substring(1));
+        gaze.add(rootCwd + program.target.substring(1));
       });
     }
 
     // Changed on target file
     if (event === 'changed' &&
-      (filepath.substring(cwd.length) === program.target.substring(1))) {
+      (filepath.substring(rootCwd.length) === program.target.substring(1))) {
       if (program.output) {
         console.log(`Running doctoc on ${program.target}`);
       }
@@ -90,16 +90,16 @@ function init() {
 function docToc(files, callback) {
   const execString = `doctoc ${program.target} --github`;
   exec(execString, (err, stdout, stderr) => {
-    if(stderr) {
+    if (stderr) {
       console.log(stderr);
     }
-    if(err !== null) {
-      throw error;
+    if (err !== null) {
+      throw err;
     }
 
-    updateReadme(mdTree(files, cwd));
+    updateReadme(mdTree(files, rootCwd));
 
-    if(callback) {
+    if (callback) {
       callback();
     }
   });
@@ -109,11 +109,10 @@ function docToc(files, callback) {
  * Convert the filename to a link
  * @param  {string} file    filename to convert to link
  * @param  {string} cwd     current working directory
- * @param  {bool}   nolink  should it generate a link?
+ * @param  {bool}   nolink  should it  nerate a link?
  * @return {string}         markdown string
  */
-function generateMarkdown(file, cwd, nolink) {
-  const noLink = noLink || false;
+function generateMarkdown(file, cwd, noLink = false) {
   const mdEscape = /([_*])/g;
   const text = file
               .substring(cwd.length)
@@ -137,7 +136,11 @@ function isDir(testStr) {
  */
 function mdTree(fileTree, cwd) {
   // markdown list needs to start off w/ empty line;
-  let tree = ['', program.listFilesHeader, ''];
+  let tree = [
+    '',
+    program.listFilesHeader,
+    '',
+  ];
 
   // First is root filetree, so only use first key
   tree = tree.concat(
@@ -151,6 +154,7 @@ function mdTree(fileTree, cwd) {
 
   // markdown list needs to end w/ empty line;
   tree.push('');
+  console.log(tree);
   return tree;
 }
 
@@ -168,37 +172,32 @@ function recursiveBuildTree(fileTree, currKey, cwd, depth) {
   // If directory, recursive dig!!
   if (isDir(currKey) && fileTree[currKey]) {
     // Skip the root level
-    if(depth !== 1) {
+    if (depth !== 1) {
       const markdown = generateMarkdown(currKey, cwd, true);
-      line.push(`${Array(depth).join('  ')}- ${markdown}`)
+      line.push(`${Array(depth).join('  ')}- ${markdown}`);
     }
 
     const nested = fileTree[currKey];
     nested
-      .sort(function(a, b) {
+      .sort((a, b) => {
         // Push directories below files
-        if(isDir(a) && !isDir(b)) {
+        if (isDir(a) && !isDir(b)) {
           return 1;
         } else if (!isDir(a) && isDir(b)) {
           return -1;
         }
         return 0;
       })
-      .forEach(function(file) {
-        if(isDir(file) && fileTree[file] === undefined) {
-          return;
-        } else {
+      .forEach((file) => {
+        if (!isDir(file) && fileTree[file] !== 'undefined') {
           line = line.concat(
             recursiveBuildTree(fileTree, file, cwd, depth + 1)
           );
         }
       });
-  // If directory and not in filetree,
-  // which means it's childfree
-  } else if (isDir(currKey) && !fileTree[currKey]) {
-    return;
-  // Else treat as a filename
-  } else {
+  } else if (!isDir(currKey) && !fileTree[currKey]) {
+    // If not directory and  in filetree
+    // Treat as filename
     const markdown = generateMarkdown(currKey, cwd);
     line.push(`${Array(depth).join('  ')}- ${markdown}`);
   }
@@ -207,27 +206,32 @@ function recursiveBuildTree(fileTree, currKey, cwd, depth) {
 
 /**
  * Write the markdown tree to the end of doctoc output
- * @param  {array} mdTree   array of lines to append to doctoc output
+ * @param  {array} tree   array of lines to append to doctoc output
  * @return {null}           no return
  */
-function updateReadme(mdTree) {
-  if (mdTree.length <= 0) {
+function updateReadme(tree) {
+  if (tree.length <= 0) {
     return;
   }
 
   const file = fs.readFileSync(program.target, 'utf8');
 
-  mdTree
-    .push('<!-- END doctoc generated TOC please keep comment here to allow auto update -->')
+  tree
+    .push([
+      '<!-- END doctoc generated TOC please',
+      'keep comment here to allow auto update -->',
+    ].join(' '));
 
   const dirtyFile = file
     .replace(
-      '**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*',
+      [ '**Table of Contents**  *generated with',
+        '[DocToc](https://github.com/thlorenz/doctoc)*' ].join(' '),
       program.targetHeader
     )
     .replace(
-      '<!-- END doctoc generated TOC please keep comment here to allow auto update -->',
-      mdTree.join('\n')
+      [ '<!-- END doctoc generated TOC please keep',
+        'comment here to allow auto update -->' ].join(' '),
+      tree.join('\n')
     );
 
   fs.writeFileSync(program.target, dirtyFile, 'utf8');
