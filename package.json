@@ -20,7 +20,7 @@
     "doctoc-watcher"
   ],
   "bin": {
-    "doctoc-watch": "src/doctoc-watch.js"
+    "doctoc-watch": "lib/doctoc-watch.js"
   },
   "author": "Alley Interactive",
   "license": "GPL-2.0",
